@@ -10,7 +10,7 @@ Jasne! Oto zaktualizowana i uporządkowana wersja Twojego pliku **README**, któ
 ```markdown
 # 📄 Document Verifier – Ethereum Blockchain
 
-System do **dodawania, przechowywania i weryfikacji dokumentów na blockchainie Ethereum** z wykorzystaniem lokalnej sieci Hardhat oraz narzędzi do monitorowania (Grafana + Prometheus).
+System do **dodawania i weryfikacji dokumentów na blockchainie Ethereum** z wykorzystaniem lokalnej sieci Hardhat oraz narzędzi do monitorowania (Grafana + Prometheus).
 
 ---
 
