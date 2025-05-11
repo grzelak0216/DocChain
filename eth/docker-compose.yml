@@ -1,5 +1,56 @@
+version: "3.8"
+
+# Testy:
+# 👉 http://localhost:9090/metrics – surowe metryki z eksportera
+# 👉 http://localhost:9091 – Prometheus UI
+# | Cel                                | Poprawne zapytanie Prometheus              |
+# | ---------------------------------- | ------------------------------------------ |
+# | Cena gasu (Gwei)                   | `eth_exe_gas_price_gwei`                   |
+# | Liczba transakcji w ostatnim bloku | `eth_exe_block_head_transactions_in_block` |
+# | Base fee per gas                   | `eth_exe_block_head_base_fee_per_gas`      |
+# | Gas użyty w ostatnim bloku         | `eth_exe_block_head_gas_used`              |
+# | Numer aktualnego bloku             | `eth_exe_sync_current_block`               |
+# | Liczba peerów (Hardhat: 0)         | `eth_exe_net_peer_count`                   |
+
+# 👉 http://localhost:3000 – Grafana (login: admin, hasło: admin)
+# 👉 http://localhost:8545 – Hardhat node (JSON-RPC)
+
 services:
   hardhat:
     build: .
     ports:
       - "8545:8545"
+    networks:
+      - eth-net
+
+  exporter:
+    image: samcm/ethereum-metrics-exporter:latest
+    depends_on:
+      - hardhat
+    environment:
+      - RPC_URL=http://hardhat:8545
+    ports:
+      - "9090:9090"
+    networks:
+      - eth-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9091:9090"
+    networks:
+      - eth-net
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    networks:
+      - eth-net
+
+networks:
+  eth-net:
