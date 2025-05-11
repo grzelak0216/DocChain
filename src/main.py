@@ -6,6 +6,7 @@ from src.document_handler import (
     update_document_ui,
     delete_document_ui
 )
+from src.blockchain_verify import blockchain_verify_main
 
 def main():
     web3 = connect_web3()
@@ -23,7 +24,8 @@ def main():
         print("3. Zaktualizuj dokument")
         print("4. Usuń dokument")
         print("5. Wdróż kontrakt")
-        print("6. Wyjście")
+        print("6. Weryfikacja transakcji")
+        print("7. Wyjście")
         choice = input("Wybierz opcję: ")
 
         if choice == "1":
@@ -50,6 +52,8 @@ def main():
             contract_address = deploy_contract(web3)
             contract = load_contract(web3, auto_deploy=False)
         elif choice == "6":
+            blockchain_verify_main(web3)
+        elif choice == "7":
             break
         else:
             print("Nieprawidłowy wybór.")
