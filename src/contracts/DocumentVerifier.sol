@@ -14,6 +14,7 @@ contract DocumentVerifier {
 
     event DocumentAdded(bytes32 indexed documentHash, address indexed issuer, string documentName);
     event DocumentUpdated(bytes32 indexed documentHash, string newName, string newType);
+    event DocumentDeleted(bytes32 indexed documentHash);
 
     /// @notice Dodaje dokument do systemu
     /// @param documentHash - hash dokumentu (SHA-256 jako bytes32)
@@ -72,5 +73,14 @@ contract DocumentVerifier {
         documents[documentHash].documentType = newType;
 
         emit DocumentUpdated(documentHash, newName, newType);
+    }
+
+    /// @notice Usuwa dokument z rejestru (tylko wystawca)
+    /// @param documentHash - hash dokumentu
+    function deleteDocument(bytes32 documentHash) public {
+        require(documents[documentHash].issuer == msg.sender, "Only issuer can delete");
+        require(documents[documentHash].isVerified, "Document not found or already invalid");
+        delete documents[documentHash];
+        emit DocumentDeleted(documentHash);
     }
 }

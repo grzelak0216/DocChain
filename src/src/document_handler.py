@@ -50,3 +50,21 @@ def update_document_ui(contract, web3):
     })
     tx_hash, block, status = send_transaction(web3, txn)
     print("Zaktualizowano:", tx_hash, "| Blok:", block, "| Status:", "OK" if status == 1 else "BŁĄD")
+
+def delete_document_ui(contract, web3):
+    path = input("Ścieżka do pliku do usunięcia: ")
+    content = read_file_binary(path)
+    doc_hash = generate_document_hash(content)
+    bytes32_hash = hex_to_bytes32(doc_hash)
+    
+    nonce = web3.eth.get_transaction_count(get_account().address)
+    txn = contract.functions.deleteDocument(bytes32_hash).build_transaction({
+        'from': get_account().address,
+        'nonce': nonce,
+        'gas': 2000000,
+        'gasPrice': web3.to_wei('50', 'gwei')
+    })
+    
+    tx_hash, block, status = send_transaction(web3, txn)
+    print("Usunięto:", tx_hash, "| Blok:", block, "| Status:", "OK" if status == 1 else "BŁĄD")
+
