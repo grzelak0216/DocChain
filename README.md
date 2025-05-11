@@ -1,16 +1,6 @@
-Jasne! Oto zaktualizowana i uporządkowana wersja Twojego pliku **README**, która:
-
-- ✅ zawiera pełne instrukcje uruchamiania projektu Python,
-- ✅ dodaje integrację z Dockerem (Hardhat + monitoring: Grafana + Prometheus + Exporter),
-- ✅ tłumaczy dokładnie, co robi każda część systemu,
-- ✅ jest czytelna, spójna i gotowa do użytku/zamieszczenia publicznie.
-
----
-
-```markdown
 # 📄 Document Verifier – Ethereum Blockchain
 
-System do **dodawania i weryfikacji dokumentów na blockchainie Ethereum** z wykorzystaniem lokalnej sieci Hardhat oraz narzędzi do monitorowania (Grafana + Prometheus).
+System do **dodawania, przechowywania i weryfikacji dokumentów na blockchainie Ethereum** z wykorzystaniem lokalnej sieci Hardhat oraz narzędzi do monitorowania (Grafana + Prometheus).
 
 ---
 
@@ -26,19 +16,20 @@ System do **dodawania i weryfikacji dokumentów na blockchainie Ethereum** z wyk
 ---
 
 ## 📁 Struktura projektu
+
 ```
 
-document_verifier/
-├── contracts/ # Smart kontrakt Solidity
-├── data/ # Adres kontraktu, hash dokumentów
-├── src/ # Logika aplikacji i integracje z Web3
-├── main.py # Uruchomienie aplikacji w trybie CLI
+document\_verifier/
+├── contracts/             # Smart kontrakt Solidity
+├── data/                  # Adres kontraktu, hash dokumentów
+├── src/                   # Logika aplikacji i integracje z Web3
+├── main.py                # Uruchomienie aplikacji w trybie CLI
 ├── requirements.txt
-├── Dockerfile # Obraz dla sieci Hardhat
-├── docker-compose.yml # Wszystkie serwisy (Hardhat, Prometheus, Grafana, Exporter)
-└── prometheus.yml # Konfiguracja Prometheusa
+├── Dockerfile             # Obraz dla sieci Hardhat
+├── docker-compose.yml     # Wszystkie serwisy (Hardhat, Prometheus, Grafana, Exporter)
+└── prometheus.yml         # Konfiguracja Prometheusa
 
-````
+```
 
 ---
 
@@ -50,7 +41,7 @@ W katalogu projektu:
 
 ```bash
 docker compose up --build
-````
+```
 
 To uruchamia:
 
