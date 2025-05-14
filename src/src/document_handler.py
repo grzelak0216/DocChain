@@ -1,6 +1,9 @@
 from datetime import datetime
 from src.utils import read_file_binary, generate_document_hash, hex_to_bytes32
 from src.blockchain import get_account, send_transaction
+from logging import getLogger
+
+logger = getLogger("DocChain")
 
 def add_document_ui(contract, web3):
     path = input("Ścieżka do pliku: ")
@@ -20,7 +23,7 @@ def add_document(contract, web3, content, name, doc_type):
         'gasPrice': web3.to_wei('50', 'gwei')
     })
     tx_hash, block, status = send_transaction(web3, txn)
-    print("Transakcja:", tx_hash, "| Blok:", block, "| Status:", "OK" if status == 1 else "BŁĄD")
+    logger.info("Transakcja:", tx_hash, "| Blok:", block, "| Status:", "OK" if status == 1 else "BŁĄD")
 
 def verify_document_ui(contract):
     path = input("Ścieżka do pliku do weryfikacji: ")
@@ -30,9 +33,9 @@ def verify_document_ui(contract):
     try:
         verified, issuer, timestamp, name, doc_type = contract.functions.verifyDocument(bytes32_hash).call()
         dt = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-        print(f"Weryfikacja: {verified}\nDokument: {name} ({doc_type})\nWystawca: {issuer}\nData: {dt}")
+        logger.info(f"Weryfikacja: {verified}\nDokument: {name} ({doc_type})\nWystawca: {issuer}\nData: {dt}")
     except Exception as e:
-        print("Błąd:", str(e))
+        logger.info("Błąd:", str(e))
 
 def update_document_ui(contract, web3):
     path = input("Ścieżka do pliku: ")
@@ -49,7 +52,7 @@ def update_document_ui(contract, web3):
         'gasPrice': web3.to_wei('50', 'gwei')
     })
     tx_hash, block, status = send_transaction(web3, txn)
-    print("Zaktualizowano:", tx_hash, "| Blok:", block, "| Status:", "OK" if status == 1 else "BŁĄD")
+    logger.info("Zaktualizowano:", tx_hash, "| Blok:", block, "| Status:", "OK" if status == 1 else "BŁĄD")
 
 def delete_document_ui(contract, web3):
     path = input("Ścieżka do pliku do usunięcia: ")
@@ -66,5 +69,5 @@ def delete_document_ui(contract, web3):
     })
     
     tx_hash, block, status = send_transaction(web3, txn)
-    print("Usunięto:", tx_hash, "| Blok:", block, "| Status:", "OK" if status == 1 else "BŁĄD")
+    logger.info("Usunięto:", tx_hash, "| Blok:", block, "| Status:", "OK" if status == 1 else "BŁĄD")
 

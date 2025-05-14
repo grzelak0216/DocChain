@@ -1,10 +1,12 @@
 import os
+import sys
+import logging
 from PyQt5.QtWidgets import (
     QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QMessageBox,
-    QLineEdit, QStyle
+    QLineEdit, QStyle, QLabel, QTextEdit, QSizePolicy
 )
 from PyQt5.QtGui import QPixmap, QPalette, QBrush
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QObject, pyqtSignal
 
 from src.blockchain import connect_web3, load_contract, deploy_contract
 from src.gui.transactionDialog import TransactionDialog
@@ -14,6 +16,38 @@ from src.document_handler import (
 )
 from src.utils import read_file_binary
 
+
+# === Logger setup ===
+if not os.path.exists("logi"):
+    os.makedirs("logi")
+
+logger = logging.getLogger("DocChain")
+logger.setLevel(logging.INFO)
+logger.handlers.clear()
+
+formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+
+# File handler
+file_handler = logging.FileHandler("logi/app.log", encoding="utf-8")
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+# Terminal handler
+stream_handler = logging.StreamHandler(sys.__stdout__)
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
+
+# GUI handler
+class GuiLogHandler(logging.Handler):
+    def __init__(self, callback):
+        super().__init__()
+        self.callback = callback
+
+    def emit(self, record):
+        msg = self.format(record)
+        self.callback(msg)
+
+
 class BlockchainApp(QWidget):
     def __init__(self):
         super().__init__()
@@ -21,22 +55,27 @@ class BlockchainApp(QWidget):
         self.contract = load_contract(self.web3) if os.path.exists("data/contract_address.txt") else None
         self.init_ui()
 
+        gui_handler = GuiLogHandler(self.append_log)
+        gui_handler.setFormatter(formatter)
+        logger.addHandler(gui_handler)
+
     def init_ui(self):
         self.setWindowTitle("DocChain - GUI")
-        self.setMinimumSize(700, 550)
+        self.setMinimumSize(1000, 800)
 
-        # === Ustawiamy tło aplikacji poprzez paletę ===
-        background_pixmap = QPixmap("./src/gui/bg.jpg").scaled(self.size(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+        # Tło
+        background = QPixmap("./src/gui/bg.jpg").scaled(self.size(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
         palette = QPalette()
-        palette.setBrush(QPalette.Window, QBrush(background_pixmap))
+        palette.setBrush(QPalette.Window, QBrush(background))
         self.setAutoFillBackground(True)
         self.setPalette(palette)
 
-        # === Layout interfejsu ===
+        # Layout
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(30, 30, 30, 30)
         main_layout.setSpacing(15)
 
+        # Sekcje
         main_layout.addLayout(self.section_add_document())
         main_layout.addLayout(self.section_verify_document())
         main_layout.addLayout(self.section_update_document())
@@ -45,8 +84,26 @@ class BlockchainApp(QWidget):
         main_layout.addWidget(self.create_button("6. Weryfikacja transakcji", QStyle.SP_MessageBoxInformation, self.handle_verify_transaction))
         main_layout.addWidget(self.create_button("7. Wyjście", QStyle.SP_DialogCloseButton, self.close))
 
+        # Logi
+        main_layout.addWidget(QLabel("Logi aplikacji:"))
+        self.console_output = QTextEdit()
+        self.console_output.setReadOnly(True)
+        self.console_output.setMinimumHeight(200)
+        self.console_output.setStyleSheet("""
+            QTextEdit {
+                background-color: #111;
+                color: #00ffcc;
+                font-family: "Courier New", "Menlo", "Consolas", monospace;
+                font-size: 11px;
+                border-radius: 6px;
+                border: 1px solid #00cec9;
+            }
+        """)
+        main_layout.addWidget(self.console_output)
+
         self.setLayout(main_layout)
 
+        # Styl
         self.setStyleSheet("""
             QLineEdit {
                 background-color: #1e272e;
@@ -56,12 +113,6 @@ class BlockchainApp(QWidget):
                 padding: 8px;
                 font-size: 14px;
             }
-
-            QLineEdit:focus {
-                border: 2px solid #00b894;
-                background-color: #2f3640;
-            }
-
             QPushButton {
                 background-color: #00b894;
                 color: white;
@@ -71,30 +122,24 @@ class BlockchainApp(QWidget):
                 border-radius: 6px;
                 font-size: 14px;
             }
-
             QPushButton:hover {
                 background-color: #019875;
             }
-
-            QPushButton:disabled {
-                background-color: #636e72;
-                color: #dfe6e9;
-            }
-
             QLabel {
                 color: white;
                 font-size: 13px;
             }
         """)
 
-
     def resizeEvent(self, event):
-        background_pixmap = QPixmap("./src/gui/bg.jpg").scaled(self.size(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+        background = QPixmap("./src/gui/bg.jpg").scaled(self.size(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
         palette = self.palette()
-        palette.setBrush(QPalette.Window, QBrush(background_pixmap))
+        palette.setBrush(QPalette.Window, QBrush(background))
         self.setPalette(palette)
         super().resizeEvent(event)
 
+    def append_log(self, text):
+        self.console_output.append(text)
 
     def create_button(self, text, icon_enum, func):
         btn = QPushButton(text)
@@ -186,8 +231,14 @@ class BlockchainApp(QWidget):
             QMessageBox.warning(self, "Brak danych", "Uzupełnij wszystkie pola.")
             return
         content = read_file_binary(path)
-        add_document(self.contract, self.web3, content, name, doc_type)
-        QMessageBox.information(self, "OK", "Dokument dodany.")
+        logger.info(f"Dodawanie dokumentu: {name} ({doc_type}) | Plik: {path}")
+        # add_document(self.contract, self.web3, content, name, doc_type)
+        try:
+            add_document(self.contract, self.web3, content, name, doc_type)
+            QMessageBox.information(self, "OK", "Dokument dodany.")
+        except Exception as e:
+            logger.exception("Błąd podczas dodawania dokumentu")
+            QMessageBox.critical(self, "Błąd", f"Błąd dodawania dokumentu:\n{str(e)}")
 
     def handle_verify_document(self):
         if not self.contract:
@@ -197,6 +248,7 @@ class BlockchainApp(QWidget):
         if not path:
             QMessageBox.warning(self, "Brak pliku", "Podaj ścieżkę.")
             return
+        logger.info(f"Weryfikacja dokumentu: {path}")
         verify_document_ui(self.contract)
 
     def handle_update_document(self):
@@ -209,6 +261,7 @@ class BlockchainApp(QWidget):
         if not all([path, name, doc_type]):
             QMessageBox.warning(self, "Brak danych", "Uzupełnij wszystkie pola.")
             return
+        logger.info(f"Aktualizacja dokumentu: {path} → {name} ({doc_type})")
         update_document_ui(self.contract, self.web3)
 
     def handle_delete_document(self):
@@ -219,11 +272,13 @@ class BlockchainApp(QWidget):
         if not path:
             QMessageBox.warning(self, "Brak pliku", "Podaj ścieżkę.")
             return
+        logger.info(f"Usuwanie dokumentu: {path}")
         delete_document_ui(self.contract, self.web3)
 
     def handle_deploy_contract(self):
         self.contract = deploy_contract(self.web3)
         self.contract = load_contract(self.web3, auto_deploy=False)
+        logger.info("Kontrakt wdrożony i załadowany.")
         QMessageBox.information(self, "OK", "Kontrakt wdrożony.")
 
     def handle_verify_transaction(self):

@@ -2,6 +2,9 @@ import os
 from web3 import Web3
 from src.contract_compiler import get_abi, get_bytecode
 from eth_account import Account
+from logging import getLogger
+
+logger = getLogger("DocChain")
 
 PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 ACCOUNT = Account.from_key(PRIVATE_KEY)
@@ -31,20 +34,20 @@ def deploy_contract(web3) -> str:
     with open(CONTRACT_ADDRESS_FILE, "w") as f:
         f.write(contract_address)
 
-    print(f"Kontrakt wdrożony pod adresem: {contract_address}")
+    logger.info(f"Kontrakt wdrożony pod adresem: {contract_address}")
     return contract_address
 
 def load_contract(web3, auto_deploy=True):
     if not os.path.exists(CONTRACT_ADDRESS_FILE):
         if auto_deploy:
-            print("Brak kontraktu – automatyczne wdrożenie...")
+            logger.info("Brak kontraktu – automatyczne wdrożenie...")
             contract_address = deploy_contract(web3)
         else:
             raise FileNotFoundError("Brak kontraktu i auto_deploy = False.")
     else:
         with open(CONTRACT_ADDRESS_FILE, "r") as f:
             contract_address = f.read().strip()
-        print(f"Wczytano kontrakt: {contract_address}")
+        logger.info(f"Wczytano kontrakt: {contract_address}")
 
     abi = get_abi()
     return web3.eth.contract(address=contract_address, abi=abi)
@@ -60,14 +63,14 @@ def load_contract(web3, auto_deploy=True):
 
     if not os.path.exists(CONTRACT_ADDRESS_FILE):
         if auto_deploy:
-            print("Brak kontraktu – automatyczne wdrożenie...")
+            logger.info("Brak kontraktu – automatyczne wdrożenie...")
             contract_address = deploy_contract(web3)
         else:
             raise FileNotFoundError("Brak kontraktu i auto_deploy = False.")
     else:
         with open(CONTRACT_ADDRESS_FILE, "r") as f:
             contract_address = f.read().strip()
-        print(f"Wczytano kontrakt: {contract_address}")
+        logger.info(f"Wczytano kontrakt: {contract_address}")
 
     abi = get_abi()
     return web3.eth.contract(address=contract_address, abi=abi)
