@@ -3,7 +3,7 @@ import sqlite3
 from logging import getLogger
 
 logger = getLogger("DocChain")
-conn = sqlite3.connect("logi/blockchain_logs.db")
+conn = sqlite3.connect("logs/blockchain_logs.db")
 cursor = conn.cursor()
 
 cursor.execute("""CREATE TABLE IF NOT EXISTS transactions (

@@ -18,8 +18,8 @@ from src.utils import read_file_binary
 
 
 # === Logger setup ===
-if not os.path.exists("logi"):
-    os.makedirs("logi")
+if not os.path.exists("logs"):
+    os.makedirs("logs")
 
 logger = logging.getLogger("DocChain")
 logger.setLevel(logging.INFO)
@@ -28,7 +28,7 @@ logger.handlers.clear()
 formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
 
 # File handler
-file_handler = logging.FileHandler("logi/app.log", encoding="utf-8")
+file_handler = logging.FileHandler("logs/app_logs.log", encoding="utf-8")
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
@@ -49,9 +49,11 @@ class GuiLogHandler(logging.Handler):
 
 
 class BlockchainApp(QWidget):
-    def __init__(self):
+    def __init__(self, rpc_url, private_key):
         super().__init__()
-        self.web3 = connect_web3()
+        self.rpc_url = rpc_url
+        self.private_key = private_key
+        self.web3 = connect_web3(rpc_url, private_key)
         self.contract = load_contract(self.web3) if os.path.exists("data/contract_address.txt") else None
         self.init_ui()
 
