@@ -6,7 +6,7 @@ System do **dodawania, przechowywania i weryfikacji dokumentów na blockchainie 
 
 ## 🔧 Wymagania
 
-- Python 3.10+
+- Python 3.13
 - Docker + Docker Compose
 - Node.js (jeśli nie używasz Dockera do uruchamiania Hardhat)
 - Ganache/Hardhat (w tym projekcie: Hardhat + Docker)

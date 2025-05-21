@@ -7,6 +7,7 @@ from web3.exceptions import ContractLogicError
 logger = getLogger("DocChain")
 
 
+# === ADD ===
 def add_document_ui(contract, web3):
     try:
         path = input("Ścieżka do pliku: ")
@@ -45,12 +46,18 @@ def add_document(contract, web3, content, name, doc_type):
         raise
 
 
+# === VERIFY ===
 def verify_document_ui(contract):
     try:
         path = input("Ścieżka do pliku do weryfikacji: ")
-        logger.info(f"Weryfikacja dokumentu: {path}")
-
         content = read_file_binary(path)
+        verify_document(contract, content)
+    except Exception as e:
+        logger.exception(f"Błąd w verify_document_ui(): {str(e)}")
+
+
+def verify_document(contract, content) -> bool:
+    try:
         doc_hash = generate_document_hash(content)
         bytes32_hash = hex_to_bytes32(doc_hash)
 
@@ -60,25 +67,34 @@ def verify_document_ui(contract):
         logger.info(
             f"Weryfikacja: {verified}\nDokument: {name} ({doc_type})\nWystawca: {issuer}\nData: {dt}"
         )
+
+        return verified  # ✅ ZWRACAMY WYNIK
     except ContractLogicError as e:
-        logger.warning(f"Weryfikacja nie powiodła się (logika kontraktu): {str(e)}")
+        logger.warning("Dokument nie istnieje w blockchainie.")
+        return False
     except Exception as e:
         logger.exception(f"Błąd podczas weryfikacji dokumentu: {str(e)}")
+        raise
 
 
+# === UPDATE ===
 def update_document_ui(contract, web3):
     try:
         path = input("Ścieżka do pliku: ")
         new_name = input("Nowa nazwa: ")
         new_type = input("Nowy typ: ")
-
-        logger.info(f"Aktualizacja dokumentu: {path} → {new_name} ({new_type})")
-
         content = read_file_binary(path)
+        update_document(contract, web3, content, new_name, new_type)
+    except Exception as e:
+        logger.exception(f"Błąd w update_document_ui(): {str(e)}")
+
+
+def update_document(contract, web3, content, new_name, new_type):
+    try:
         doc_hash = generate_document_hash(content)
         bytes32_hash = hex_to_bytes32(doc_hash)
-        nonce = web3.eth.get_transaction_count(get_account().address)
 
+        nonce = web3.eth.get_transaction_count(get_account().address)
         txn = contract.functions.updateDocument(bytes32_hash, new_name, new_type).build_transaction({
             'from': get_account().address,
             'nonce': nonce,
@@ -95,17 +111,22 @@ def update_document_ui(contract, web3):
         logger.exception(f"Błąd podczas aktualizacji dokumentu: {str(e)}")
 
 
+# === DELETE ===
 def delete_document_ui(contract, web3):
     try:
         path = input("Ścieżka do pliku do usunięcia: ")
-        logger.info(f"Usuwanie dokumentu: {path}")
-
         content = read_file_binary(path)
+        delete_document(contract, web3, content)
+    except Exception as e:
+        logger.exception(f"Błąd w delete_document_ui(): {str(e)}")
+
+
+def delete_document(contract, web3, content):
+    try:
         doc_hash = generate_document_hash(content)
         bytes32_hash = hex_to_bytes32(doc_hash)
 
         nonce = web3.eth.get_transaction_count(get_account().address)
-
         txn = contract.functions.deleteDocument(bytes32_hash).build_transaction({
             'from': get_account().address,
             'nonce': nonce,

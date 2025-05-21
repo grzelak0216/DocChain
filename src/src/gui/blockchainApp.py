@@ -3,19 +3,17 @@ import sys
 import logging
 from PyQt5.QtWidgets import (
     QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QMessageBox,
-    QLineEdit, QStyle, QLabel, QTextEdit, QSizePolicy
+    QLineEdit, QStyle, QLabel, QTextEdit
 )
 from PyQt5.QtGui import QPixmap, QPalette, QBrush
-from PyQt5.QtCore import Qt, QObject, pyqtSignal
+from PyQt5.QtCore import Qt
 
 from src.blockchain import connect_web3, load_contract, deploy_contract
 from src.gui.transactionDialog import TransactionDialog
 from src.document_handler import (
-    add_document, verify_document_ui,
-    update_document_ui, delete_document_ui
+    add_document, verify_document, update_document, delete_document
 )
 from src.utils import read_file_binary
-
 
 # === Logger setup ===
 if not os.path.exists("logs"):
@@ -27,17 +25,14 @@ logger.handlers.clear()
 
 formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
 
-# File handler
 file_handler = logging.FileHandler("logs/app_logs.log", encoding="utf-8")
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-# Terminal handler
 stream_handler = logging.StreamHandler(sys.__stdout__)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
-# GUI handler
 class GuiLogHandler(logging.Handler):
     def __init__(self, callback):
         super().__init__()
@@ -46,7 +41,6 @@ class GuiLogHandler(logging.Handler):
     def emit(self, record):
         msg = self.format(record)
         self.callback(msg)
-
 
 class BlockchainApp(QWidget):
     def __init__(self, rpc_url, private_key):
@@ -65,19 +59,16 @@ class BlockchainApp(QWidget):
         self.setWindowTitle("DocChain - GUI")
         self.setMinimumSize(1000, 800)
 
-        # Tło
         background = QPixmap("./src/gui/bg.jpg").scaled(self.size(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
         palette = QPalette()
         palette.setBrush(QPalette.Window, QBrush(background))
         self.setAutoFillBackground(True)
         self.setPalette(palette)
 
-        # Layout
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(30, 30, 30, 30)
         main_layout.setSpacing(15)
 
-        # Sekcje
         main_layout.addLayout(self.section_add_document())
         main_layout.addLayout(self.section_verify_document())
         main_layout.addLayout(self.section_update_document())
@@ -86,7 +77,6 @@ class BlockchainApp(QWidget):
         main_layout.addWidget(self.create_button("6. Weryfikacja transakcji", QStyle.SP_MessageBoxInformation, self.handle_verify_transaction))
         main_layout.addWidget(self.create_button("7. Wyjście", QStyle.SP_DialogCloseButton, self.close))
 
-        # Logi
         main_layout.addWidget(QLabel("Logi aplikacji:"))
         self.console_output = QTextEdit()
         self.console_output.setReadOnly(True)
@@ -105,7 +95,6 @@ class BlockchainApp(QWidget):
 
         self.setLayout(main_layout)
 
-        # Styl
         self.setStyleSheet("""
             QLineEdit {
                 background-color: #1e272e;
@@ -185,7 +174,7 @@ class BlockchainApp(QWidget):
     def section_verify_document(self):
         layout = QHBoxLayout()
         self.verify_path = QLineEdit()
-        self.verify_path.setPlaceholderText("Ścieżka do pliku do weryfikacji")
+        self.verify_path.setPlaceholderText("\u015acie\u017cka do pliku do weryfikacji")
         btn = self.icon_button("2. Zweryfikuj dokument", QStyle.SP_DialogApplyButton, self.handle_verify_document)
         layout.addWidget(btn)
         layout.addWidget(self.verify_path)
@@ -198,7 +187,7 @@ class BlockchainApp(QWidget):
 
         form = QVBoxLayout()
         self.update_path = QLineEdit()
-        self.update_path.setPlaceholderText("Ścieżka do pliku")
+        self.update_path.setPlaceholderText("\u015acie\u017cka do pliku")
         form.addWidget(self.update_path)
 
         lower_fields = QHBoxLayout()
@@ -216,7 +205,7 @@ class BlockchainApp(QWidget):
     def section_delete_document(self):
         layout = QHBoxLayout()
         self.delete_path = QLineEdit()
-        self.delete_path.setPlaceholderText("Ścieżka do pliku do usunięcia")
+        self.delete_path.setPlaceholderText("\u015acie\u017cka do pliku do usunięcia")
         btn = self.icon_button("4. Usuń dokument", QStyle.SP_TrashIcon, self.handle_delete_document)
         layout.addWidget(btn)
         layout.addWidget(self.delete_path)
@@ -232,10 +221,9 @@ class BlockchainApp(QWidget):
         if not all([path, name, doc_type]):
             QMessageBox.warning(self, "Brak danych", "Uzupełnij wszystkie pola.")
             return
-        content = read_file_binary(path)
-        logger.info(f"Dodawanie dokumentu: {name} ({doc_type}) | Plik: {path}")
-        # add_document(self.contract, self.web3, content, name, doc_type)
         try:
+            content = read_file_binary(path)
+            logger.info(f"Dodawanie dokumentu: {name} ({doc_type}) | Plik: {path}")
             add_document(self.contract, self.web3, content, name, doc_type)
             QMessageBox.information(self, "OK", "Dokument dodany.")
         except Exception as e:
@@ -250,8 +238,17 @@ class BlockchainApp(QWidget):
         if not path:
             QMessageBox.warning(self, "Brak pliku", "Podaj ścieżkę.")
             return
-        logger.info(f"Weryfikacja dokumentu: {path}")
-        verify_document_ui(self.contract)
+        try:
+            content = read_file_binary(path)
+            logger.info(f"Weryfikacja dokumentu: {path}")
+            result = verify_document(self.contract, content)
+
+            if result:
+                QMessageBox.information(self, "Weryfikacja", "✅ Dokument znajduje się w blockchainie.")
+            else:
+                QMessageBox.warning(self, "Weryfikacja", "⚠️ Dokument NIE istnieje w blockchainie.")
+        except Exception as e:
+            QMessageBox.critical(self, "Błąd", f"Błąd podczas weryfikacji:\n{str(e)}")
 
     def handle_update_document(self):
         if not self.contract:
@@ -263,8 +260,13 @@ class BlockchainApp(QWidget):
         if not all([path, name, doc_type]):
             QMessageBox.warning(self, "Brak danych", "Uzupełnij wszystkie pola.")
             return
-        logger.info(f"Aktualizacja dokumentu: {path} → {name} ({doc_type})")
-        update_document_ui(self.contract, self.web3)
+        try:
+            content = read_file_binary(path)
+            logger.info(f"Aktualizacja dokumentu: {path} → {name} ({doc_type})")
+            update_document(self.contract, self.web3, content, name, doc_type)
+            QMessageBox.information(self, "Zaktualizowano", "Dokument został zaktualizowany.")
+        except Exception as e:
+            QMessageBox.critical(self, "Błąd", f"Błąd podczas aktualizacji:\n{str(e)}")
 
     def handle_delete_document(self):
         if not self.contract:
@@ -274,8 +276,13 @@ class BlockchainApp(QWidget):
         if not path:
             QMessageBox.warning(self, "Brak pliku", "Podaj ścieżkę.")
             return
-        logger.info(f"Usuwanie dokumentu: {path}")
-        delete_document_ui(self.contract, self.web3)
+        try:
+            content = read_file_binary(path)
+            logger.info(f"Usuwanie dokumentu: {path}")
+            delete_document(self.contract, self.web3, content)
+            QMessageBox.information(self, "Usunięto", "Dokument został usunięty.")
+        except Exception as e:
+            QMessageBox.critical(self, "Błąd", f"Błąd podczas usuwania:\n{str(e)}")
 
     def handle_deploy_contract(self):
         self.contract = deploy_contract(self.web3)
